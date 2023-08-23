@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 pub mod listener;
+pub mod message_handler;
 
 pub trait Dep {}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Message{
+pub struct Message {
     msg_type: String,
-    payload: String
+    payload: String,
 }

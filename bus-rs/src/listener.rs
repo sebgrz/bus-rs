@@ -1,8 +1,9 @@
-use crate::{Message, Dep};
 
+
+use crate::{Dep, Message};
 
 pub struct Listener<'a> {
-    dep: &'a dyn Dep
+    dep: &'a dyn Dep,
 }
 
 impl<'a> Iterator for Listener<'a> {
@@ -13,6 +14,6 @@ impl<'a> Iterator for Listener<'a> {
     }
 }
 
-pub fn create_listener<'a>(/* TODO: bus type as parameter */dep: &'a dyn Dep) -> Listener<'a> {
-    Listener{ dep }
+pub fn create_listener<'a>(/* TODO: bus type as parameter */ dep: &'a dyn Dep,) -> Listener<'a> {
+    Listener { dep }
 }
