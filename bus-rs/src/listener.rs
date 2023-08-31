@@ -7,7 +7,7 @@ use crate::{
 
 pub struct Listener {
     dep: Box<dyn Dep>,
-    handlers: Box<HashMap<String, Box<dyn FnMut(&mut dyn Any)>>>,
+    handlers: Box<HashMap<String, Box<dyn Fn(&mut dyn Any)>>>,
 }
 
 impl<'a> Iterator for Listener {
@@ -31,25 +31,33 @@ impl Listener {
     ) where
         TMessage: 'static,
     {
-        let handler = RefCell::new(handler);
+        let a = RefCell::new(handler);
         let m = move |data: TMessage| {
-            let mut a = handler.borrow_mut();
-            a.handle(data);
+            a.borrow_mut().handle(data);
         };
         self.register_handler_callback(m);
+    }
+
+    pub fn handle<TMessage>(&self, msg: TMessage)
+        where TMessage: 'static
+    {
+        let message_name = std::any::type_name::<TMessage>();
+        if let Some(handler) = self.handlers.get(message_name) {
+            handler(&mut Some(msg));
+        }
     }
 
     pub fn registered_handlers_count(&self) -> usize {
         self.handlers.len()
     }
 
-    fn register_handler_callback<TMessage, TCallback>(&mut self, mut callback: TCallback)
+    fn register_handler_callback<TMessage, TCallback>(&mut self, callback: TCallback)
     where
         TMessage: 'static,
-        TCallback: FnMut(TMessage) + 'static,
+        TCallback: Fn(TMessage) + 'static,
     {
         let message_name = std::any::type_name::<TMessage>();
-        let callback: Box<dyn FnMut(&mut dyn Any)> = Box::new(move |msg| {
+        let callback: Box<dyn Fn(&mut dyn Any)> = Box::new(move |msg| {
             let msg = msg.downcast_mut::<Option<TMessage>>().unwrap();
             callback(msg.take().unwrap())
         });
@@ -58,10 +66,8 @@ impl Listener {
     }
 }
 
-pub fn create_listener(
-    /* TODO: bus type as parameter */ dep: Box<dyn Dep>,
-) -> Listener {
- Listener {
+pub fn create_listener(/* TODO: bus type as parameter */ dep: Box<dyn Dep>) -> Listener {
+    Listener {
         dep,
         handlers: Box::new(HashMap::new()),
     }
