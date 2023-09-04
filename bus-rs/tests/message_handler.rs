@@ -1,9 +1,47 @@
 #[cfg(test)]
 mod tests {
     use std::{cell::RefCell, rc::Rc};
-
     use bus_rs::{listener::create_listener, message_handler::MessageHandler, Dep};
 
+    #[test]
+    fn should_register_properly_message_handler() {
+        // given
+        let mut listener = create_listener(Box::new(Dependencies {}));
+
+        // when
+        listener.register_handler(TestMessageHandler {
+            logger: Rc::new(RefCell::new(TestLogger::new())),
+        });
+
+        // then
+        assert_eq!(1, listener.registered_handlers_count());
+    }
+
+    #[test]
+    fn should_message_invoke_msg_handler_correctly() {
+        // given
+        let logger = Rc::new(RefCell::new(TestLogger::new()));
+        let mut listener = create_listener(Box::new(Dependencies {}));
+
+        listener.register_handler(WrongTestMessageHandler {
+            logger: logger.clone(),
+        });
+        listener.register_handler(TestMessageHandler {
+            logger: logger.clone(),
+        });
+
+        // when
+        listener.handle(TestMessage {
+            data: "test_data".to_string(),
+        });
+
+        // then
+        assert_eq!(2, listener.registered_handlers_count());
+        assert_eq!(1, logger.borrow().get().len());
+        assert_eq!("test test_data", logger.borrow().get()[0]);
+    }
+
+    // Helpers
     struct TestLogger {
         messages: Vec<String>,
     }
@@ -60,42 +98,4 @@ mod tests {
     struct Dependencies;
 
     impl Dep for Dependencies {}
-
-    #[test]
-    fn should_register_properly_message_handler() {
-        // given
-        let mut listener = create_listener(Box::new(Dependencies {}));
-
-        // when
-        listener.register_handler(TestMessageHandler {
-            logger: Rc::new(RefCell::new(TestLogger::new())),
-        });
-
-        // then
-        assert_eq!(1, listener.registered_handlers_count());
-    }
-
-    #[test]
-    fn should_message_invoke_msg_handler_correctly() {
-        // given
-        let logger = Rc::new(RefCell::new(TestLogger::new()));
-        let mut listener = create_listener(Box::new(Dependencies {}));
-
-        listener.register_handler(WrongTestMessageHandler {
-            logger: logger.clone(),
-        });
-        listener.register_handler(TestMessageHandler {
-            logger: logger.clone(),
-        });
-
-        // when
-        listener.handle(TestMessage {
-            data: "test_data".to_string(),
-        });
-
-        // then
-        assert_eq!(2, listener.registered_handlers_count());
-        assert_eq!(1, logger.borrow().get().len());
-        assert_eq!("test test_data", logger.borrow().get()[0]);
-    }
 }
