@@ -1,12 +1,19 @@
 #[cfg(test)]
 mod tests {
+    use bus_rs::{
+        listener::create_listener, message::MessageStore, message_handler::MessageHandler, Client,
+        Dep, Message, MessageResolver,
+    };
+    use serde::Deserialize;
     use std::{cell::RefCell, rc::Rc};
-    use bus_rs::{listener::create_listener, message_handler::MessageHandler, Dep};
 
     #[test]
     fn should_register_properly_message_handler() {
         // given
-        let mut listener = create_listener(Box::new(Dependencies {}));
+        let message_store = MessageStore::new();
+        let client = Box::new(MockClient::new());
+        let dep = Box::new(Dependencies {});
+        let mut listener = create_listener(message_store, client, dep);
 
         // when
         listener.register_handler(TestMessageHandler {
@@ -20,8 +27,11 @@ mod tests {
     #[test]
     fn should_message_invoke_msg_handler_correctly() {
         // given
+        let message_store = MessageStore::new();
+        let client = Box::new(MockClient::new());
+        let dep = Box::new(Dependencies {});
         let logger = Rc::new(RefCell::new(TestLogger::new()));
-        let mut listener = create_listener(Box::new(Dependencies {}));
+        let mut listener = create_listener(message_store, client, dep);
 
         listener.register_handler(WrongTestMessageHandler {
             logger: logger.clone(),
@@ -31,8 +41,9 @@ mod tests {
         });
 
         // when
-        listener.handle(TestMessage {
-            data: "test_data".to_string(),
+        listener.handle(Message {
+            msg_type: "TestMessage".to_string(),
+            payload: r#"{ "data": "test_data" }"#.to_string(),
         });
 
         // then
@@ -42,6 +53,28 @@ mod tests {
     }
 
     // Helpers
+    struct MockClient {
+        messages: Vec<Message>,
+    }
+
+    impl MockClient {
+        fn new() -> Self {
+            MockClient { messages: vec![] }
+        }
+
+        fn push_message(&mut self, msg: Message) {
+            self.messages.push(msg);
+        }
+    }
+
+    impl Client for MockClient {
+        fn receiver(&self, recv_callback: &dyn Fn(bus_rs::Message)) {
+            for msg in self.messages.iter() {
+                recv_callback(msg.clone());
+            }
+        }
+    }
+
     struct TestLogger {
         messages: Vec<String>,
     }
@@ -64,8 +97,15 @@ mod tests {
         }
     }
 
+    #[derive(Deserialize)]
     struct TestMessage {
         data: String,
+    }
+
+    impl MessageResolver for TestMessage {
+        fn name() -> &'static str {
+            "TestMessage"
+        }
     }
 
     struct TestMessageHandler {
@@ -79,9 +119,15 @@ mod tests {
         }
     }
 
-
+    #[derive(Deserialize)]
     struct WrongTestMessage {
         data: String,
+    }
+
+    impl MessageResolver for WrongTestMessage {
+        fn name() -> &'static str {
+            "WrongTestMessage"
+        }
     }
 
     struct WrongTestMessageHandler {

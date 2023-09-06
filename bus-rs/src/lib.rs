@@ -6,8 +6,16 @@ pub mod message_handler;
 
 pub trait Dep {}
 
+pub trait Client {
+    fn receiver(&self, recv_callback: &dyn Fn(Message));
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Message {
-    msg_type: String,
-    payload: String,
+    pub msg_type: String,
+    pub payload: String,
+}
+
+pub trait MessageResolver {
+    fn name() -> &'static str;
 }

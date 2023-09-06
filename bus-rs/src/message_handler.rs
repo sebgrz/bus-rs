@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::Message;
 
 pub trait MessageHandler<TMessage>
@@ -13,4 +11,4 @@ pub trait MessageHandlerRegistration {
     fn registration_name(&self) -> String;
 }
 
-pub fn message_handler_dispatcher(msg: Message) {}
+pub fn message_handler_dispatcher(_msg: Message) {}
