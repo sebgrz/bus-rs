@@ -1,7 +1,7 @@
 use serde::de::DeserializeOwned;
 use std::{any::Any, collections::HashMap};
 
-use crate::Message;
+use crate::RawMessage;
 
 pub struct MessageStore {
     messages: Box<HashMap<String, Box<dyn Fn(Box<&str>) -> Box<dyn Any>>>>,
@@ -27,7 +27,7 @@ impl MessageStore {
         self.messages.insert(key.to_string(), callback);
     }
 
-    pub fn resolve<TMessage>(&self, raw_message: Message) -> TMessage
+    pub fn resolve<TMessage>(&self, raw_message: RawMessage) -> TMessage
     where
         TMessage: DeserializeOwned + 'static,
     {
@@ -40,7 +40,7 @@ impl MessageStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::Message;
+    use crate::RawMessage;
 
     use super::MessageStore;
 
@@ -62,15 +62,15 @@ mod tests {
         store.register::<CreateUserMessage>("create_user");
         store.register::<RemoveUserMessage>("remove_user");
 
-        let raw_msg_create_user_a = Message {
+        let raw_msg_create_user_a = RawMessage {
             msg_type: "create_user".to_string(),
             payload: r#"{ "name": "seba" }"#.to_string(),
         };
-        let raw_msg_create_user_b = Message {
+        let raw_msg_create_user_b = RawMessage {
             msg_type: "create_user".to_string(),
             payload: r#"{ "name": "john" }"#.to_string(),
         };
-        let raw_msg_remove_user = Message {
+        let raw_msg_remove_user = RawMessage {
             msg_type: "remove_user".to_string(),
             payload: r#"{ "id": 123 }"#.to_string(),
         };

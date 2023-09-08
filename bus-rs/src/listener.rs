@@ -1,23 +1,22 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use serde::de::DeserializeOwned;
+
 
 use crate::{
-    message::MessageStore,
-    message_handler::{message_handler_dispatcher, MessageHandler},
-    Client, Dep, Message, MessageResolver,
+    message_handler::MessageHandler,
+    Client, Dep, RawMessage, MessageResolver, message_store::MessageStore, MessageConstraints,
 };
 
 pub struct Listener {
     message_store: Rc<RefCell<MessageStore>>,
     client: Rc<RefCell<dyn Client>>,
     dep: Box<dyn Dep>,
-    handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, Message)>>>,
+    handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, RawMessage)>>>,
 }
 
 impl Listener {
     pub fn listen(&mut self) {
-        let callback = |msg: Message| {
+        let callback = |msg: RawMessage| {
             self.handle(msg);
         };
         self.client.borrow().receiver(&callback);
@@ -25,10 +24,10 @@ impl Listener {
 
     pub fn register_handler<TMessage>(&mut self, handler: impl MessageHandler<TMessage> + 'static)
     where
-        TMessage: DeserializeOwned + MessageResolver + 'static,
+        TMessage: MessageConstraints,
     {
         let handler_ref = RefCell::new(handler);
-        let handler_fn = move |ms: &MessageStore, data: Message| {
+        let handler_fn = move |ms: &MessageStore, data: RawMessage| {
             let msg = ms.resolve::<TMessage>(data);
             handler_ref.borrow_mut().handle(msg);
         };
@@ -43,7 +42,7 @@ impl Listener {
         self.handlers.len()
     }
 
-    fn handle(&self, msg: Message) {
+    fn handle(&self, msg: RawMessage) {
         if let Some(handler) = self.handlers.get(msg.msg_type.as_str()) {
             handler(&self.message_store.borrow(), msg);
         }
@@ -51,10 +50,10 @@ impl Listener {
 
     fn register_handler_callback<TMessage, TCallback>(&mut self, callback: TCallback)
     where
-        TMessage: DeserializeOwned + MessageResolver + 'static,
-        TCallback: Fn(&MessageStore, Message) + 'static,
+        TMessage: MessageConstraints,
+        TCallback: Fn(&MessageStore, RawMessage) + 'static,
     {
-        let callback: Box<dyn Fn(&MessageStore, Message)> =
+        let callback: Box<dyn Fn(&MessageStore, RawMessage)> =
             Box::new(move |ms, msg| callback(ms, msg));
 
         self.handlers.insert(TMessage::name().to_string(), callback);

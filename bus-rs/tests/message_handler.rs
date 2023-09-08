@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use bus_rs::{
-        listener::create_listener, message::MessageStore, message_handler::MessageHandler, Client,
-        Dep, Message, MessageResolver,
+        listener::create_listener, message_handler::MessageHandler, message_store::MessageStore,
+        Client, Dep, RawMessage, MessageResolver,
     };
     use serde::Deserialize;
     use std::{cell::RefCell, rc::Rc};
@@ -39,8 +39,8 @@ mod tests {
         listener.register_handler(TestMessageHandler {
             logger: logger.clone(),
         });
-        
-        client.borrow_mut().push_message(Message {
+
+        client.borrow_mut().push_message(RawMessage {
             msg_type: "TestMessage".to_string(),
             payload: r#"{ "data": "test_data" }"#.to_string(),
         });
@@ -56,7 +56,7 @@ mod tests {
 
     // Helpers
     struct MockClient {
-        messages: Vec<Message>,
+        messages: Vec<RawMessage>,
     }
 
     impl MockClient {
@@ -64,13 +64,13 @@ mod tests {
             MockClient { messages: vec![] }
         }
 
-        fn push_message(&mut self, msg: Message) {
+        fn push_message(&mut self, msg: RawMessage) {
             self.messages.push(msg);
         }
     }
 
     impl Client for MockClient {
-        fn receiver(&self, recv_callback: &dyn Fn(bus_rs::Message)) {
+        fn receiver(&self, recv_callback: &dyn Fn(bus_rs::RawMessage)) {
             for msg in self.messages.iter() {
                 recv_callback(msg.clone());
             }
