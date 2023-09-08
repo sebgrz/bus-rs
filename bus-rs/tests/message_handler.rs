@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use bus_rs::{
-        listener::create_listener, message_handler::MessageHandler, message_store::MessageStore,
-        Client, Dep, RawMessage, MessageResolver,
+        listener::Listener, message_handler::MessageHandler, Client, Dep, MessageResolver,
+        RawMessage,
     };
     use serde::Deserialize;
     use std::{cell::RefCell, rc::Rc};
@@ -10,10 +10,9 @@ mod tests {
     #[test]
     fn should_register_properly_message_handler() {
         // given
-        let message_store = MessageStore::new();
         let client = Rc::new(RefCell::new(MockClient::new()));
         let dep = Box::new(Dependencies {});
-        let mut listener = create_listener(message_store, client, dep);
+        let mut listener = Listener::new(client, dep);
 
         // when
         listener.register_handler(TestMessageHandler {
@@ -27,11 +26,10 @@ mod tests {
     #[test]
     fn should_message_invoke_msg_handler_correctly() {
         // given
-        let message_store = MessageStore::new();
         let client = Rc::new(RefCell::new(MockClient::new()));
         let dep = Box::new(Dependencies {});
         let logger = Rc::new(RefCell::new(TestLogger::new()));
-        let mut listener = create_listener(message_store, client.clone(), dep);
+        let mut listener = Listener::new(client.clone(), dep);
 
         listener.register_handler(WrongTestMessageHandler {
             logger: logger.clone(),

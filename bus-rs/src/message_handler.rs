@@ -6,7 +6,3 @@ where
 {
     fn handle(&mut self, msg: TMessage);
 }
-
-pub trait MessageHandlerRegistration {
-    fn registration_name(&self) -> String;
-}

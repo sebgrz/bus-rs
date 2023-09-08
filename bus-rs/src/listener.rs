@@ -1,10 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-
-
 use crate::{
-    message_handler::MessageHandler,
-    Client, Dep, RawMessage, MessageResolver, message_store::MessageStore, MessageConstraints,
+    message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints, RawMessage,
 };
 
 pub struct Listener {
@@ -15,6 +12,15 @@ pub struct Listener {
 }
 
 impl Listener {
+    pub fn new(client: Rc<RefCell<dyn Client>>, dep: Box<dyn Dep>) -> Self {
+        Listener {
+            message_store: Rc::new(RefCell::new(MessageStore::new())),
+            client,
+            dep,
+            handlers: Box::new(HashMap::new()),
+        }
+    }
+
     pub fn listen(&mut self) {
         let callback = |msg: RawMessage| {
             self.handle(msg);
@@ -57,18 +63,5 @@ impl Listener {
             Box::new(move |ms, msg| callback(ms, msg));
 
         self.handlers.insert(TMessage::name().to_string(), callback);
-    }
-}
-
-pub fn create_listener(
-    message_store: MessageStore,
-    client: Rc<RefCell<dyn Client>>,
-    dep: Box<dyn Dep>,
-) -> Listener {
-    Listener {
-        message_store: Rc::new(RefCell::new(message_store)),
-        client,
-        dep,
-        handlers: Box::new(HashMap::new()),
     }
 }
