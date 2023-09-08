@@ -10,7 +10,7 @@ use crate::{
 
 pub struct Listener {
     message_store: Rc<RefCell<MessageStore>>,
-    client: Box<dyn Client>,
+    client: Rc<RefCell<dyn Client>>,
     dep: Box<dyn Dep>,
     handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, Message)>>>,
 }
@@ -18,9 +18,9 @@ pub struct Listener {
 impl Listener {
     pub fn listen(&mut self) {
         let callback = |msg: Message| {
-            message_handler_dispatcher(msg);
+            self.handle(msg);
         };
-        self.client.receiver(&callback);
+        self.client.borrow().receiver(&callback);
     }
 
     pub fn register_handler<TMessage>(&mut self, handler: impl MessageHandler<TMessage> + 'static)
@@ -39,14 +39,14 @@ impl Listener {
         self.register_handler_callback::<TMessage, _>(handler_fn);
     }
 
-    pub fn handle(&self, msg: Message) {
+    pub fn registered_handlers_count(&self) -> usize {
+        self.handlers.len()
+    }
+
+    fn handle(&self, msg: Message) {
         if let Some(handler) = self.handlers.get(msg.msg_type.as_str()) {
             handler(&self.message_store.borrow(), msg);
         }
-    }
-
-    pub fn registered_handlers_count(&self) -> usize {
-        self.handlers.len()
     }
 
     fn register_handler_callback<TMessage, TCallback>(&mut self, callback: TCallback)
@@ -63,7 +63,7 @@ impl Listener {
 
 pub fn create_listener(
     message_store: MessageStore,
-    client: Box<dyn Client>,
+    client: Rc<RefCell<dyn Client>>,
     dep: Box<dyn Dep>,
 ) -> Listener {
     Listener {

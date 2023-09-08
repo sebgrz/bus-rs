@@ -11,7 +11,7 @@ mod tests {
     fn should_register_properly_message_handler() {
         // given
         let message_store = MessageStore::new();
-        let client = Box::new(MockClient::new());
+        let client = Rc::new(RefCell::new(MockClient::new()));
         let dep = Box::new(Dependencies {});
         let mut listener = create_listener(message_store, client, dep);
 
@@ -28,10 +28,10 @@ mod tests {
     fn should_message_invoke_msg_handler_correctly() {
         // given
         let message_store = MessageStore::new();
-        let client = Box::new(MockClient::new());
+        let client = Rc::new(RefCell::new(MockClient::new()));
         let dep = Box::new(Dependencies {});
         let logger = Rc::new(RefCell::new(TestLogger::new()));
-        let mut listener = create_listener(message_store, client, dep);
+        let mut listener = create_listener(message_store, client.clone(), dep);
 
         listener.register_handler(WrongTestMessageHandler {
             logger: logger.clone(),
@@ -39,12 +39,14 @@ mod tests {
         listener.register_handler(TestMessageHandler {
             logger: logger.clone(),
         });
-
-        // when
-        listener.handle(Message {
+        
+        client.borrow_mut().push_message(Message {
             msg_type: "TestMessage".to_string(),
             payload: r#"{ "data": "test_data" }"#.to_string(),
         });
+
+        // when
+        listener.listen();
 
         // then
         assert_eq!(2, listener.registered_handlers_count());
