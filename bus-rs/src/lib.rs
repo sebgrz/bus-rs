@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub mod listener;
+pub mod message;
 pub mod message_handler;
 
 pub trait Dep {}
