@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod tests {
     use bus_rs::{
-        listener::Listener, message_handler::MessageHandler, Client, Dep, MessageResolver,
+        listener::Listener, message_handler::MessageHandler, Client, Dep,
         RawMessage,
     };
+    use bus_rs_macros::MessageResolver;
     use serde::Deserialize;
     use std::{cell::RefCell, rc::Rc};
 
@@ -97,15 +98,9 @@ mod tests {
         }
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, MessageResolver)]
     struct TestMessage {
         data: String,
-    }
-
-    impl MessageResolver for TestMessage {
-        fn name() -> &'static str {
-            "TestMessage"
-        }
     }
 
     struct TestMessageHandler {
@@ -119,15 +114,9 @@ mod tests {
         }
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, MessageResolver)]
     struct WrongTestMessage {
         data: String,
-    }
-
-    impl MessageResolver for WrongTestMessage {
-        fn name() -> &'static str {
-            "WrongTestMessage"
-        }
     }
 
     struct WrongTestMessageHandler {

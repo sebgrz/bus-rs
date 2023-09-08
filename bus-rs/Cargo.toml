@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 serde_json.workspace = true
 serde = { workspace = true, features = [ "derive" ] } 
+bus-rs-macros = { path = "../bus-rs-macros" }
