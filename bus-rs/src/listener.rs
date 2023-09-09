@@ -26,7 +26,7 @@ impl Listener {
         let callback = |msg: RawMessage| {
             self.handle(msg);
         };
-        self.client.borrow().receiver(&callback);
+        self.client.borrow_mut().receiver(&callback);
     }
 
     pub fn register_handler<TMessage>(&mut self, handler: impl MessageHandler<TMessage> + 'static)

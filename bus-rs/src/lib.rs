@@ -7,13 +7,25 @@ pub mod message_store;
 pub trait Dep {}
 
 pub trait Client {
-    fn receiver(&self, recv_callback: &dyn Fn(RawMessage));
+    fn receiver(&mut self, recv_callback: &dyn Fn(RawMessage));
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RawMessage {
     pub msg_type: String,
     pub payload: String,
+}
+
+impl From<String> for RawMessage {
+    fn from(value: String) -> Self {
+        serde_json::from_str(&value).unwrap()
+    }
+}
+
+impl Into<String> for RawMessage {
+    fn into(self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
 }
 
 pub trait MessageTypeName {
