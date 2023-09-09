@@ -8,5 +8,10 @@ edition = "2021"
 [dependencies]
 bus-rs = { path = "../bus-rs" }
 bus-rs-macros = { path = "../bus-rs-macros" }
+bus-rs-redis = { path = "../bus-rs-redis" }
 serde_json.workspace = true
 serde = { workspace = true, features = [ "derive" ] } 
+redis.workspace = true
+
+[dev-dependencies]
+testcontainers = { git = "https://github.com/testcontainers/testcontainers-rs.git", tag = "0.14.0", features = [ "watchdog" ] }

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 mod message_handler;
 mod message_store;
+mod redis_client;
 
 struct TestLogger {
     messages: Vec<String>,

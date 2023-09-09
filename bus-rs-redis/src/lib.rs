@@ -1,4 +1,4 @@
-struct RedisClient {
+pub struct RedisClient {
     connection: Box<redis::Connection>,
     channel: &'static str,
 }
@@ -20,6 +20,7 @@ impl bus_rs::Client for RedisClient {
         pubsub.subscribe(self.channel).unwrap();
 
         loop {
+            // TODO: when EOF stop loop
             let msg = pubsub.get_message().unwrap();
             let raw_message = bus_rs::RawMessage::from(msg.get_payload::<String>().unwrap());
             recv_callback(raw_message);

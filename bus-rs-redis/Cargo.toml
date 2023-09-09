@@ -6,8 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-redis = "0.23.3"
+redis.workspace = true
 bus-rs = { path = "../bus-rs" }
-
-[dev-dependencies]
-testcontainers = { git = "https://github.com/testcontainers/testcontainers-rs.git", tag = "0.14.0", features = [ "watchdog" ] }
