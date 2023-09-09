@@ -4,8 +4,8 @@ mod tests {
         listener::Listener, message_handler::MessageHandler, Client, Dep,
         RawMessage,
     };
-    use bus_rs_macros::MessageResolver;
-    use serde::Deserialize;
+    use bus_rs_macros::Message;
+    use serde::{Deserialize, Serialize};
     use std::{cell::RefCell, rc::Rc};
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
         }
     }
 
-    #[derive(Deserialize, MessageResolver)]
+    #[derive(Deserialize, Serialize, Message)]
     struct TestMessage {
         data: String,
     }
@@ -114,7 +114,7 @@ mod tests {
         }
     }
 
-    #[derive(Deserialize, MessageResolver)]
+    #[derive(Deserialize, Serialize, Message)]
     struct WrongTestMessage {
         data: String,
     }

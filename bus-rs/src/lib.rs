@@ -16,9 +16,9 @@ pub struct RawMessage {
     pub payload: String,
 }
 
-pub trait MessageResolver {
+pub trait MessageTypeName {
     fn name() -> &'static str;
 }
 
-pub trait MessageConstraints: DeserializeOwned + MessageResolver + 'static {}
-impl<T: DeserializeOwned + MessageResolver + 'static> MessageConstraints for T {}
+pub trait MessageConstraints: DeserializeOwned + MessageTypeName + 'static {}
+impl<T: DeserializeOwned + MessageTypeName + 'static> MessageConstraints for T {}
