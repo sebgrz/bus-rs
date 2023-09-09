@@ -5,6 +5,7 @@ use bus_rs_macros::message;
 use serde::{Deserialize, Serialize};
 
 mod message_handler;
+mod message_store;
 
 struct TestLogger {
     messages: Vec<String>,
