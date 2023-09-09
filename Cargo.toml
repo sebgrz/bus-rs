@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "bus-rs",
-  "bus-rs-macros"
+  "bus-rs-macros",
+  "bus-rs-redis"
 ]
 
 [workspace.dependencies]
