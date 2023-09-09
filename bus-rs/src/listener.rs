@@ -1,7 +1,8 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints, RawMessage,
+    message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints,
+    RawMessage,
 };
 
 pub struct Listener {

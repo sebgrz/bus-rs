@@ -1,10 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use bus_rs::{
-        listener::Listener, message_handler::MessageHandler, Client, Dep,
-        RawMessage,
-    };
-    use bus_rs_macros::Message;
+    use bus_rs::{listener::Listener, message_handler::MessageHandler, Client, Dep, RawMessage};
+    use bus_rs_macros::message;
     use serde::{Deserialize, Serialize};
     use std::{cell::RefCell, rc::Rc};
 
@@ -98,7 +95,8 @@ mod tests {
         }
     }
 
-    #[derive(Deserialize, Serialize, Message)]
+    #[message]
+    #[derive(Deserialize, Serialize)]
     struct TestMessage {
         data: String,
     }
@@ -114,7 +112,8 @@ mod tests {
         }
     }
 
-    #[derive(Deserialize, Serialize, Message)]
+    #[message]
+    #[derive(Deserialize, Serialize)]
     struct WrongTestMessage {
         data: String,
     }
