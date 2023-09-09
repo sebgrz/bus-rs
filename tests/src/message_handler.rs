@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use bus_rs::{listener::Listener, message_handler::MessageHandler, Client, Dep, RawMessage};
-    use bus_rs_macros::message;
-    use serde::{Deserialize, Serialize};
+    use bus_rs::{listener::Listener, Client, RawMessage};
+
     use std::{cell::RefCell, rc::Rc};
+
+    use crate::{Dependencies, TestLogger, TestMessageHandler, WrongTestMessageHandler};
 
     #[test]
     fn should_register_properly_message_handler() {
@@ -72,64 +73,4 @@ mod tests {
             }
         }
     }
-
-    struct TestLogger {
-        messages: Vec<String>,
-    }
-
-    impl TestLogger {
-        fn new() -> Self {
-            TestLogger { messages: vec![] }
-        }
-
-        fn info(&mut self, msg: String) {
-            self.messages.push(msg);
-        }
-
-        fn get(&self) -> &Vec<String> {
-            &self.messages
-        }
-
-        fn clear(&mut self) {
-            self.messages.clear();
-        }
-    }
-
-    #[message]
-    #[derive(Deserialize, Serialize)]
-    struct TestMessage {
-        data: String,
-    }
-
-    struct TestMessageHandler {
-        logger: Rc<RefCell<TestLogger>>,
-    }
-
-    impl MessageHandler<TestMessage> for TestMessageHandler {
-        fn handle(&mut self, msg: TestMessage) {
-            let mut l = self.logger.borrow_mut();
-            l.info(format!("test {}", msg.data));
-        }
-    }
-
-    #[message]
-    #[derive(Deserialize, Serialize)]
-    struct WrongTestMessage {
-        data: String,
-    }
-
-    struct WrongTestMessageHandler {
-        logger: Rc<RefCell<TestLogger>>,
-    }
-
-    impl MessageHandler<WrongTestMessage> for WrongTestMessageHandler {
-        fn handle(&mut self, msg: WrongTestMessage) {
-            let mut l = self.logger.borrow_mut();
-            l.info(format!("wrong test {}", msg.data));
-        }
-    }
-
-    struct Dependencies;
-
-    impl Dep for Dependencies {}
 }
