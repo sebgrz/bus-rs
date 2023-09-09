@@ -2,7 +2,8 @@
 members = [
   "bus-rs",
   "bus-rs-macros",
-  "bus-rs-redis"
+  "bus-rs-redis",
+  "tests"
 ]
 
 [workspace.dependencies]

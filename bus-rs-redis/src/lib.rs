@@ -18,6 +18,7 @@ impl bus_rs::Client for RedisClient {
     fn receiver(&mut self, recv_callback: &dyn Fn(bus_rs::RawMessage)) {
         let mut pubsub = self.connection.as_pubsub();
         pubsub.subscribe(self.channel).unwrap();
+
         loop {
             let msg = pubsub.get_message().unwrap();
             let raw_message = bus_rs::RawMessage::from(msg.get_payload::<String>().unwrap());
