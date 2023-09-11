@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::{Arc, Mutex}};
 
 use crate::{
     message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints,
@@ -6,16 +6,16 @@ use crate::{
 };
 
 pub struct Listener {
-    message_store: Rc<RefCell<MessageStore>>,
-    client: Rc<RefCell<dyn Client>>,
-    dep: Box<dyn Dep>,
-    handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, RawMessage)>>>,
+    message_store: Arc<Mutex<MessageStore>>,
+    client: Arc<Mutex<dyn Client + Send + Sync>>,
+    dep: Box<dyn Dep + Send + Sync>,
+    handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, RawMessage) + Send + Sync>>>,
 }
 
 impl Listener {
-    pub fn new(client: Rc<RefCell<dyn Client>>, dep: Box<dyn Dep>) -> Self {
+    pub fn new(client: Arc<Mutex<dyn Client + Send + Sync>>, dep: Box<dyn Dep + Send + Sync>) -> Self {
         Listener {
-            message_store: Rc::new(RefCell::new(MessageStore::new())),
+            message_store: Arc::new(Mutex::new(MessageStore::new())),
             client,
             dep,
             handlers: Box::new(HashMap::new()),
@@ -26,21 +26,22 @@ impl Listener {
         let callback = |msg: RawMessage| {
             self.handle(msg);
         };
-        self.client.borrow_mut().receiver(&callback);
+        self.client.lock().unwrap().receiver(&callback);
     }
 
-    pub fn register_handler<TMessage>(&mut self, handler: impl MessageHandler<TMessage> + 'static)
+    pub fn register_handler<TMessage>(&mut self, handler: impl MessageHandler<TMessage> + Send + Sync + 'static)
     where
-        TMessage: MessageConstraints,
+        TMessage: MessageConstraints + Send + Sync,
     {
-        let handler_ref = RefCell::new(handler);
+        let handler_ref = Mutex::new(handler);
         let handler_fn = move |ms: &MessageStore, data: RawMessage| {
             let msg = ms.resolve::<TMessage>(data);
-            handler_ref.borrow_mut().handle(msg);
+            handler_ref.lock().unwrap().handle(msg);
         };
 
         self.message_store
-            .borrow_mut()
+            .lock()
+            .unwrap()
             .register::<TMessage>(TMessage::name());
         self.register_handler_callback::<TMessage, _>(handler_fn);
     }
@@ -51,16 +52,16 @@ impl Listener {
 
     fn handle(&self, msg: RawMessage) {
         if let Some(handler) = self.handlers.get(msg.msg_type.as_str()) {
-            handler(&self.message_store.borrow(), msg);
+            handler(&self.message_store.lock().unwrap(), msg);
         }
     }
 
     fn register_handler_callback<TMessage, TCallback>(&mut self, callback: TCallback)
     where
         TMessage: MessageConstraints,
-        TCallback: Fn(&MessageStore, RawMessage) + 'static,
+        TCallback: Fn(&MessageStore, RawMessage) + Send + Sync + 'static,
     {
-        let callback: Box<dyn Fn(&MessageStore, RawMessage)> =
+        let callback: Box<dyn Fn(&MessageStore, RawMessage) + Send + Sync> =
             Box::new(move |ms, msg| callback(ms, msg));
 
         self.handlers.insert(TMessage::name().to_string(), callback);

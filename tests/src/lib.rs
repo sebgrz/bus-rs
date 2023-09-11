@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::{Mutex, Arc}};
 
 use bus_rs::{message_handler::MessageHandler, Dep};
 use bus_rs_macros::message;
@@ -36,12 +36,12 @@ struct TestMessage {
 }
 
 struct TestMessageHandler {
-    logger: Rc<RefCell<TestLogger>>,
+    logger: Arc<Mutex<TestLogger>>,
 }
 
 impl MessageHandler<TestMessage> for TestMessageHandler {
     fn handle(&mut self, msg: TestMessage) {
-        let mut l = self.logger.borrow_mut();
+        let mut l = self.logger.lock().unwrap();
         l.info(format!("test {}", msg.data));
     }
 }
@@ -53,12 +53,12 @@ struct WrongTestMessage {
 }
 
 struct WrongTestMessageHandler {
-    logger: Rc<RefCell<TestLogger>>,
+    logger: Arc<Mutex<TestLogger>>,
 }
 
 impl MessageHandler<WrongTestMessage> for WrongTestMessageHandler {
     fn handle(&mut self, msg: WrongTestMessage) {
-        let mut l = self.logger.borrow_mut();
+        let mut l = self.logger.lock().unwrap();
         l.info(format!("wrong test {}", msg.data));
     }
 }
