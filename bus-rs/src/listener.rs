@@ -1,4 +1,7 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use crate::{
     message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints,
@@ -13,7 +16,10 @@ pub struct Listener {
 }
 
 impl Listener {
-    pub fn new(client: Arc<Mutex<dyn Client + Send + Sync>>, dep: Box<dyn Dep + Send + Sync>) -> Self {
+    pub fn new(
+        client: Arc<Mutex<dyn Client + Send + Sync>>,
+        dep: Box<dyn Dep + Send + Sync>,
+    ) -> Self {
         Listener {
             message_store: Arc::new(Mutex::new(MessageStore::new())),
             client,
@@ -29,8 +35,10 @@ impl Listener {
         self.client.lock().unwrap().receiver(&callback);
     }
 
-    pub fn register_handler<TMessage>(&mut self, handler: impl MessageHandler<TMessage> + Send + Sync + 'static)
-    where
+    pub fn register_handler<TMessage>(
+        &mut self,
+        handler: impl MessageHandler<TMessage> + Send + Sync + 'static,
+    ) where
         TMessage: MessageConstraints + Send + Sync,
     {
         let handler_ref = Mutex::new(handler);

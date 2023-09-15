@@ -2,7 +2,7 @@
 mod tests {
     use bus_rs::{listener::Listener, Client, RawMessage};
 
-    use std::{cell::RefCell, rc::Rc, sync::{Mutex, Arc}};
+    use std::sync::{Arc, Mutex};
 
     use crate::{Dependencies, TestLogger, TestMessageHandler, WrongTestMessageHandler};
 

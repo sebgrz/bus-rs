@@ -1,18 +1,19 @@
 #[cfg(test)]
 mod tests {
     use std::{
-        cell::RefCell,
-        rc::Rc,
+        sync::{Arc, Mutex},
         thread::{sleep, spawn},
-        time::Duration, sync::{Arc, Mutex},
+        time::Duration,
     };
 
-    use bus_rs::{listener::Listener, Client};
+    use bus_rs::listener::Listener;
     use bus_rs_redis::RedisClient;
     use redis::Commands;
     use testcontainers::{core::WaitFor, *};
 
-    use crate::{Dependencies, TestLogger, TestMessageHandler, WrongTestMessageHandler, TestMessage};
+    use crate::{
+        Dependencies, TestLogger, TestMessage, TestMessageHandler, WrongTestMessageHandler,
+    };
 
     #[test]
     fn should_redis_client_receive_message_correctly() {
@@ -36,8 +37,9 @@ mod tests {
         });
 
         let test_raw_msg: bus_rs::RawMessage = TestMessage {
-            data: "test_data".to_string()
-        }.into();
+            data: "test_data".to_string(),
+        }
+        .into();
 
         // when
         spawn(move || {
@@ -45,7 +47,7 @@ mod tests {
         });
 
         sleep(Duration::from_millis(200));
-        let test_raw_msg:String = test_raw_msg.into();
+        let test_raw_msg: String = test_raw_msg.into();
         let _: redis::Value = con.publish("test_channel", test_raw_msg).unwrap();
 
         // then

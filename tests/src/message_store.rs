@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use bus_rs::RawMessage;
     use bus_rs::message_store::MessageStore;
+    use bus_rs::RawMessage;
 
     #[derive(serde::Deserialize)]
     struct CreateUserMessage {

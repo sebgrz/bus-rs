@@ -1,5 +1,9 @@
 use serde::de::DeserializeOwned;
-use std::{any::Any, collections::HashMap, sync::{Mutex, Arc}};
+use std::{
+    any::Any,
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use crate::RawMessage;
 
@@ -24,7 +28,10 @@ impl MessageStore {
             return msg;
         });
 
-        self.messages.lock().unwrap().insert(key.to_string(), callback);
+        self.messages
+            .lock()
+            .unwrap()
+            .insert(key.to_string(), callback);
     }
 
     pub fn resolve<TMessage>(&self, raw_message: RawMessage) -> TMessage
