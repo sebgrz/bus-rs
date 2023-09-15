@@ -6,7 +6,7 @@ mod tests {
         time::Duration,
     };
 
-    use bus_rs::listener::Listener;
+    use bus_rs::{listener::Listener, ClientError};
     use bus_rs_redis::RedisClient;
     use redis::Commands;
     use testcontainers::{core::WaitFor, *};
@@ -43,7 +43,11 @@ mod tests {
 
         // when
         spawn(move || {
-            listener.listen();
+            listener.listen().unwrap_or_else(|e| {
+                if let ClientError::General(err) = e {
+                    panic!("client_error: {}", err);
+                }
+            });
         });
 
         sleep(Duration::from_millis(200));

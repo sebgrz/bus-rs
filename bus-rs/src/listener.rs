@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints,
-    RawMessage,
+    RawMessage, ClientError,
 };
 
 pub struct Listener {
@@ -28,11 +28,11 @@ impl Listener {
         }
     }
 
-    pub fn listen(&mut self) {
+    pub fn listen(&mut self) -> Result<(), ClientError> {
         let callback = |msg: RawMessage| {
             self.handle(msg);
         };
-        self.client.lock().unwrap().receiver(&callback);
+        self.client.lock().unwrap().receiver(&callback)
     }
 
     pub fn register_handler<TMessage>(

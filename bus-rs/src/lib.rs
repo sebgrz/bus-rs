@@ -7,7 +7,12 @@ pub mod message_store;
 pub trait Dep {}
 
 pub trait Client {
-    fn receiver(&mut self, recv_callback: &dyn Fn(RawMessage));
+    fn receiver(&mut self, recv_callback: &dyn Fn(RawMessage)) -> Result<(), ClientError>;
+}
+
+pub enum ClientError {
+    IO(String),
+    General(String)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

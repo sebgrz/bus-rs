@@ -43,7 +43,7 @@ mod tests {
         });
 
         // when
-        listener.listen();
+        let _ = listener.listen();
 
         // then
         let logger = logger.lock().unwrap();
@@ -68,10 +68,11 @@ mod tests {
     }
 
     impl Client for MockClient {
-        fn receiver(&mut self, recv_callback: &dyn Fn(bus_rs::RawMessage)) {
+        fn receiver(&mut self, recv_callback: &dyn Fn(bus_rs::RawMessage)) -> Result<(), bus_rs::ClientError> {
             for msg in self.messages.iter() {
                 recv_callback(msg.clone());
             }
+            Ok(())
         }
     }
 }
