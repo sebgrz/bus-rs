@@ -68,7 +68,10 @@ mod tests {
     }
 
     impl Client for MockClient {
-        fn receiver(&mut self, recv_callback: &dyn Fn(bus_rs::RawMessage)) -> Result<(), bus_rs::ClientError> {
+        fn receiver(
+            &mut self,
+            recv_callback: &dyn Fn(bus_rs::RawMessage),
+        ) -> Result<(), bus_rs::ClientError> {
             for msg in self.messages.iter() {
                 recv_callback(msg.clone());
             }

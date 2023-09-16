@@ -9,3 +9,6 @@ edition = "2021"
 serde_json.workspace = true
 serde = { workspace = true, features = [ "derive" ] } 
 bus-rs-macros = { path = "../bus-rs-macros" }
+tokio.workspace = true
+async-trait.workspace = true
+futures = "0.3.17"

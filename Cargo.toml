@@ -10,3 +10,5 @@ members = [
 serde_json = "1.0"
 serde = "1.0.185"
 redis = "0.23.3"
+tokio = { version = "1.32.0", features = ["full"] }
+async-trait = "0.1.73"

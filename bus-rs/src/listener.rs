@@ -4,8 +4,8 @@ use std::{
 };
 
 use crate::{
-    message_handler::MessageHandler, message_store::MessageStore, Client, Dep, MessageConstraints,
-    RawMessage, ClientError,
+    message_handler::MessageHandler, message_store::MessageStore, Client, ClientError, Dep,
+    MessageConstraints, RawMessage,
 };
 
 pub struct Listener {

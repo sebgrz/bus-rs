@@ -1,7 +1,12 @@
+use async_trait::async_trait;
+use futures::future::BoxFuture;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::sync::Arc;
 
 pub mod listener;
+pub mod listener_async;
 pub mod message_handler;
+pub mod message_handler_async;
 pub mod message_store;
 
 pub trait Dep {}
@@ -10,9 +15,20 @@ pub trait Client {
     fn receiver(&mut self, recv_callback: &dyn Fn(RawMessage)) -> Result<(), ClientError>;
 }
 
+pub type ClientCallbackFnAsync =
+    dyn Fn(RawMessage) -> BoxFuture<'static, Result<(), ClientError>> + Sync + Send;
+
+#[async_trait]
+pub trait ClientAsync {
+    async fn receiver(
+        &mut self,
+        recv_callback: Arc<ClientCallbackFnAsync>,
+    ) -> Result<(), ClientError>;
+}
+
 pub enum ClientError {
     IO(String),
-    General(String)
+    General(String),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
