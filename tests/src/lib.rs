@@ -9,6 +9,7 @@ mod message_handler;
 mod message_handler_async;
 mod message_store;
 mod redis_client;
+mod redis_client_async;
 
 struct TestLogger {
     messages: Vec<String>,
