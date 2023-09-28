@@ -1,10 +1,12 @@
 use std::sync::{Arc, Mutex};
 
-use bus_rs::{message_handler::MessageHandler, Dep};
+use async_trait::async_trait;
+use bus_rs::{message_handler::MessageHandler, message_handler_async::MessageHandlerAsync, Dep};
 use bus_rs_macros::message;
 use serde::{Deserialize, Serialize};
 
 mod message_handler;
+mod message_handler_async;
 mod message_store;
 mod redis_client;
 
@@ -30,6 +32,12 @@ impl TestLogger {
     }
 }
 
+
+struct Dependencies;
+
+impl Dep for Dependencies {}
+
+// message handlers
 #[message]
 #[derive(Deserialize, Serialize)]
 struct TestMessage {
@@ -64,6 +72,27 @@ impl MessageHandler<WrongTestMessage> for WrongTestMessageHandler {
     }
 }
 
-struct Dependencies;
+// async
+struct WrongTestMessageHandlerAsync {
+    logger: Arc<tokio::sync::Mutex<TestLogger>>,
+}
 
-impl Dep for Dependencies {}
+#[async_trait]
+impl MessageHandlerAsync<WrongTestMessage> for WrongTestMessageHandlerAsync {
+    async fn handle(&mut self, msg: WrongTestMessage) {
+        let mut l = self.logger.lock().await;
+        l.info(format!("wrong test {}", msg.data));
+    }
+}
+
+struct TestMessageHandlerAsync {
+    logger: Arc<tokio::sync::Mutex<TestLogger>>,
+}
+
+#[async_trait]
+impl MessageHandlerAsync<TestMessage> for TestMessageHandlerAsync {
+    async fn handle(&mut self, msg: TestMessage) {
+        let mut l = self.logger.lock().await;
+        l.info(format!("test {}", msg.data));
+    }
+}
