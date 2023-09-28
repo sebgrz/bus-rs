@@ -32,7 +32,6 @@ impl TestLogger {
     }
 }
 
-
 struct Dependencies;
 
 impl Dep for Dependencies {}

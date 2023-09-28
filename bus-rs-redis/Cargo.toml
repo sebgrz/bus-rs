@@ -6,5 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-redis.workspace = true
 bus-rs = { path = "../bus-rs" }
+futures-util = "0.3"
+redis.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
