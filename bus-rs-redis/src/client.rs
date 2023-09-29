@@ -1,4 +1,5 @@
 use bus_rs::ClientError;
+use redis::Commands;
 
 pub struct RedisClient {
     connection: Box<redis::Connection>,
@@ -6,7 +7,7 @@ pub struct RedisClient {
 }
 
 impl RedisClient {
-    pub fn new_receiver(addr: &str, channel: &'static str) -> RedisClient {
+    pub fn new(addr: &str, channel: &'static str) -> RedisClient {
         let redis_client = redis::Client::open(addr).unwrap();
         let conn = redis_client.get_connection().unwrap();
         RedisClient {
@@ -31,5 +32,19 @@ impl bus_rs::Client for RedisClient {
             let raw_message = bus_rs::RawMessage::from(msg.get_payload::<String>().unwrap());
             recv_callback(raw_message);
         }
+    }
+
+    fn send(&mut self, msg: &bus_rs::RawMessage) -> Result<(), ClientError> {
+        let str_msg: String = msg.into();
+        let result: Result<(), redis::RedisError> = self.connection.publish(self.channel, str_msg);
+
+        let _ = result.or_else(|e| {
+            if e.is_io_error() {
+                return Err(ClientError::IO(e.to_string()));
+            }
+            return Err(ClientError::General(e.to_string()));
+        });
+
+        Ok(())
     }
 }

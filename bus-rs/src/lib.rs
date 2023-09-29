@@ -8,11 +8,13 @@ pub mod listener_async;
 pub mod message_handler;
 pub mod message_handler_async;
 pub mod message_store;
+pub mod publisher;
 
 pub trait Dep {}
 
 pub trait Client {
     fn receiver(&mut self, recv_callback: &dyn Fn(RawMessage)) -> Result<(), ClientError>;
+    fn send(&mut self, msg: &RawMessage) -> Result<(), ClientError>;
 }
 
 pub type ClientCallbackFnAsync =
@@ -26,6 +28,7 @@ pub trait ClientAsync {
     ) -> Result<(), ClientError>;
 }
 
+#[derive(Debug)]
 pub enum ClientError {
     IO(String),
     General(String),
@@ -49,9 +52,15 @@ impl Into<String> for RawMessage {
     }
 }
 
+impl Into<String> for &RawMessage {
+    fn into(self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+}
+
 pub trait MessageTypeName {
     fn name() -> &'static str;
 }
 
-pub trait MessageConstraints: DeserializeOwned + MessageTypeName + 'static {}
-impl<T: DeserializeOwned + MessageTypeName + 'static> MessageConstraints for T {}
+pub trait MessageConstraints: DeserializeOwned + Serialize + MessageTypeName + 'static {}
+impl<T: DeserializeOwned + Serialize + MessageTypeName + 'static> MessageConstraints for T {}

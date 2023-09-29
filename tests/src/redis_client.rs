@@ -16,14 +16,14 @@ mod tests {
     };
 
     #[test]
-    fn should_redis_client_receive_message_correctly() {
+    fn should_listener_with_redis_client_receive_message_correctly() {
         // given
         let docker_client = clients::Cli::default();
         let (_node, url) = prepare_redis_container(&docker_client);
         let client = redis::Client::open(url.as_ref()).unwrap();
         let mut con = client.get_connection().unwrap();
 
-        let redis_client = RedisClient::new_receiver(url.as_ref(), "test_channel");
+        let redis_client = RedisClient::new(url.as_ref(), "test_channel");
         let client = Arc::new(Mutex::new(redis_client));
         let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));

@@ -37,10 +37,10 @@ mod tests {
             logger: logger.clone(),
         });
 
-        client.lock().unwrap().push_message(RawMessage {
+        client.lock().unwrap().send(&RawMessage {
             msg_type: "TestMessage".to_string(),
             payload: r#"{ "data": "test_data" }"#.to_string(),
-        });
+        }).unwrap();
 
         // when
         let _ = listener.listen();
@@ -61,10 +61,6 @@ mod tests {
         fn new() -> Self {
             MockClient { messages: vec![] }
         }
-
-        fn push_message(&mut self, msg: RawMessage) {
-            self.messages.push(msg);
-        }
     }
 
     impl Client for MockClient {
@@ -75,6 +71,11 @@ mod tests {
             for msg in self.messages.iter() {
                 recv_callback(msg.clone());
             }
+            Ok(())
+        }
+
+        fn send(&mut self, msg: &RawMessage) -> Result<(), bus_rs::ClientError> {
+            self.messages.push(msg.clone());
             Ok(())
         }
     }
