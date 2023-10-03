@@ -37,10 +37,14 @@ mod tests {
             logger: logger.clone(),
         });
 
-        client.lock().unwrap().send(&RawMessage {
-            msg_type: "TestMessage".to_string(),
-            payload: r#"{ "data": "test_data" }"#.to_string(),
-        }).unwrap();
+        client
+            .lock()
+            .unwrap()
+            .send(&RawMessage {
+                msg_type: "TestMessage".to_string(),
+                payload: r#"{ "data": "test_data" }"#.to_string(),
+            })
+            .unwrap();
 
         // when
         let _ = listener.listen();

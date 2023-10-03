@@ -6,7 +6,7 @@ mod tests {
         time::Duration,
     };
 
-    use bus_rs::{listener::Listener, ClientError};
+    use bus_rs::{listener::Listener, publisher::Publisher, ClientError};
     use bus_rs_redis::RedisClient;
     use redis::Commands;
     use testcontainers::{core::WaitFor, *};
@@ -60,6 +60,51 @@ mod tests {
         let logger = logger.lock().unwrap();
         assert_eq!(1, logger.get().len());
         assert_eq!("test test_data", logger.get()[0]);
+    }
+
+    #[test]
+    fn should_publiher_with_redis_client_send_message_correctly() {
+        // given test receiver
+        let docker_client = clients::Cli::default();
+        let (_node, url) = prepare_redis_container(&docker_client);
+        let client = redis::Client::open(url.as_ref()).unwrap();
+        let mut connection = client.clone().get_connection().unwrap();
+
+        // given publisher
+        let redis_client = RedisClient::new(url.as_ref(), "test_channel");
+        let client = Arc::new(Mutex::new(redis_client));
+        let publisher = Publisher::new(client.clone());
+
+        let raw_message: Arc<Mutex<Option<bus_rs::RawMessage>>> = Arc::new(Mutex::new(None));
+        let caught_raw_message = raw_message.clone();
+        spawn(move || {
+            let mut pubsub = connection.as_pubsub();
+            pubsub.subscribe("test_channel").unwrap();
+
+            loop {
+                let msg = pubsub.get_message().unwrap_or_else(|e| {
+                    panic!("get_message err: {:?}", e);
+                });
+                *caught_raw_message.lock().unwrap() = Some(bus_rs::RawMessage::from(
+                    msg.get_payload::<String>().unwrap(),
+                ));
+            }
+        });
+        sleep(Duration::from_millis(200));
+
+        let test_msg = TestMessage {
+            data: "test_data".to_string(),
+        };
+
+        // when
+        publisher.publish(&test_msg);
+
+        // then
+        sleep(Duration::from_millis(200));
+
+        let message_result = raw_message.lock().unwrap().clone().unwrap();
+        assert_eq!("TestMessage", message_result.msg_type);
+        assert_eq!(r#"{"data":"test_data"}"#, message_result.payload);
     }
 
     fn prepare_redis_container<'a>(docker: &'a clients::Cli) -> (Container<'a, Redis>, String) {
