@@ -88,5 +88,9 @@ mod tests {
             }
             Ok(())
         }
+
+        async fn send(&mut self, _msg: &RawMessage) -> Result<(), ClientError> {
+            todo!("not implemented");
+        }
     }
 }

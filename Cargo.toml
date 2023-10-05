@@ -12,3 +12,4 @@ serde = "1.0.185"
 redis = { version = "0.23.3", features = ["tokio-comp"] }
 tokio = { version = "1.32.0", features = ["full"] }
 async-trait = "0.1.73"
+futures-util = "0.3"
