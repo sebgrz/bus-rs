@@ -9,6 +9,7 @@ pub mod message_handler;
 pub mod message_handler_async;
 pub mod message_store;
 pub mod publisher;
+pub mod publisher_async;
 
 pub trait Dep {}
 
@@ -26,10 +27,12 @@ pub trait ClientAsync {
         &mut self,
         recv_callback: Arc<ClientCallbackFnAsync>,
     ) -> Result<(), ClientError>;
+    async fn send(&mut self, msg: &RawMessage) -> Result<(), ClientError>;
 }
 
 #[derive(Debug)]
 pub enum ClientError {
+    NotAssignedConnection,
     IO(String),
     General(String),
 }

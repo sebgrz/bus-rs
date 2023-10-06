@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bus-rs = { path = "../bus-rs" }
-futures-util = "0.3"
+futures-util.workspace = true
 redis.workspace = true
 tokio.workspace = true
 async-trait.workspace = true
