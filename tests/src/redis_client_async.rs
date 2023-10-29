@@ -22,7 +22,7 @@ mod tests {
         let client = redis::Client::open(url.as_ref()).unwrap();
         let mut con = client.get_connection().unwrap();
 
-        let redis_client = RedisClientAsync::new_receiver(url.as_ref(), "test_channel").await;
+        let redis_client = RedisClientAsync::new_receiver(url.as_ref(), "test_channel".to_string()).await;
         let client = Arc::new(Mutex::new(redis_client));
         let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));
@@ -75,7 +75,7 @@ mod tests {
         let connection = client.clone().get_async_connection().await.unwrap();
 
         // given publisher
-        let redis_client = RedisClientAsync::new_sender(url.as_ref(), "test_channel").await;
+        let redis_client = RedisClientAsync::new_sender(url.as_ref(), "test_channel".to_string()).await;
         let client = Arc::new(Mutex::new(redis_client));
         let publisher = PublisherAsync::new(client.clone());
 

@@ -23,7 +23,7 @@ mod tests {
         let client = redis::Client::open(url.as_ref()).unwrap();
         let mut con = client.get_connection().unwrap();
 
-        let redis_client = RedisClient::new(url.as_ref(), "test_channel");
+        let redis_client = RedisClient::new(url.as_ref(), "test_channel".to_string());
         let client = Arc::new(Mutex::new(redis_client));
         let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));
@@ -71,7 +71,7 @@ mod tests {
         let mut connection = client.clone().get_connection().unwrap();
 
         // given publisher
-        let redis_client = RedisClient::new(url.as_ref(), "test_channel");
+        let redis_client = RedisClient::new(url.as_ref(), "test_channel".to_string());
         let client = Arc::new(Mutex::new(redis_client));
         let publisher = Publisher::new(client.clone());
 

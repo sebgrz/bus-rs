@@ -8,11 +8,11 @@ use tokio::sync::Mutex;
 pub struct RedisClientAsync {
     pubsub: Option<Box<redis::aio::PubSub>>,
     connection: Option<Arc<Mutex<redis::aio::Connection>>>,
-    channel: &'static str,
+    channel: String,
 }
 
 impl RedisClientAsync {
-    pub async fn new_receiver(addr: &str, channel: &'static str) -> RedisClientAsync {
+    pub async fn new_receiver(addr: &str, channel: String) -> RedisClientAsync {
         let redis_client = redis::Client::open(addr).unwrap();
         let conn = redis_client
             .get_async_connection()
@@ -26,7 +26,7 @@ impl RedisClientAsync {
         }
     }
 
-    pub async fn new_sender(addr: &str, channel: &'static str) -> RedisClientAsync {
+    pub async fn new_sender(addr: &str, channel: String) -> RedisClientAsync {
         let redis_client = redis::Client::open(addr).unwrap();
         let conn = redis_client.get_async_connection().await.unwrap();
         RedisClientAsync {
@@ -44,7 +44,7 @@ impl bus_rs::ClientAsync for RedisClientAsync {
         recv_callback: Arc<ClientCallbackFnAsync>,
     ) -> Result<(), ClientError> {
         if let Some(pubsub) = &mut self.pubsub {
-            let _ = pubsub.subscribe(self.channel).await.or_else(|e| {
+            let _ = pubsub.subscribe(self.channel.as_str()).await.or_else(|e| {
                 if e.is_io_error() {
                     return Err(ClientError::IO(e.to_string()));
                 }

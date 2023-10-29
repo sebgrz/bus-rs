@@ -3,11 +3,11 @@ use redis::Commands;
 
 pub struct RedisClient {
     connection: Box<redis::Connection>,
-    channel: &'static str,
+    channel: String,
 }
 
 impl RedisClient {
-    pub fn new(addr: &str, channel: &'static str) -> RedisClient {
+    pub fn new(addr: &str, channel: String) -> RedisClient {
         let redis_client = redis::Client::open(addr).unwrap();
         let conn = redis_client.get_connection().unwrap();
         RedisClient {
@@ -20,7 +20,7 @@ impl RedisClient {
 impl bus_rs::Client for RedisClient {
     fn receiver(&mut self, recv_callback: &dyn Fn(bus_rs::RawMessage)) -> Result<(), ClientError> {
         let mut pubsub = self.connection.as_pubsub();
-        pubsub.subscribe(self.channel).unwrap();
+        pubsub.subscribe(self.channel.as_str()).unwrap();
 
         loop {
             let msg = pubsub.get_message().map(|m| Ok(m)).unwrap_or_else(|e| {
@@ -36,7 +36,7 @@ impl bus_rs::Client for RedisClient {
 
     fn send(&mut self, msg: &bus_rs::RawMessage) -> Result<(), ClientError> {
         let str_msg: String = msg.into();
-        let result: Result<(), redis::RedisError> = self.connection.publish(self.channel, str_msg);
+        let result: Result<(), redis::RedisError> = self.connection.publish(self.channel.as_str(), str_msg);
 
         let _ = result.or_else(|e| {
             if e.is_io_error() {
