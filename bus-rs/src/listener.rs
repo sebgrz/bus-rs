@@ -4,26 +4,21 @@ use std::{
 };
 
 use crate::{
-    message_handler::MessageHandler, message_store::MessageStore, Client, ClientError, Dep,
+    message_handler::MessageHandler, message_store::MessageStore, Client, ClientError,
     MessageConstraints, RawMessage,
 };
 
 pub struct Listener {
     message_store: Arc<Mutex<MessageStore>>,
     client: Arc<Mutex<dyn Client + Send + Sync>>,
-    dep: Box<dyn Dep + Send + Sync>,
     handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, RawMessage) + Send + Sync>>>,
 }
 
 impl Listener {
-    pub fn new(
-        client: Arc<Mutex<dyn Client + Send + Sync>>,
-        dep: Box<dyn Dep + Send + Sync>,
-    ) -> Self {
+    pub fn new(client: Arc<Mutex<dyn Client + Send + Sync>>) -> Self {
         Listener {
             message_store: Arc::new(Mutex::new(MessageStore::new())),
             client,
-            dep,
             handlers: Box::new(HashMap::new()),
         }
     }

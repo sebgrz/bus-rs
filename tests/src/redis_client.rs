@@ -11,9 +11,7 @@ mod tests {
     use redis::Commands;
     use testcontainers::{core::WaitFor, *};
 
-    use crate::{
-        Dependencies, TestLogger, TestMessage, TestMessageHandler, WrongTestMessageHandler,
-    };
+    use crate::{TestLogger, TestMessage, TestMessageHandler, WrongTestMessageHandler};
 
     #[test]
     fn should_listener_with_redis_client_receive_message_correctly() {
@@ -25,9 +23,8 @@ mod tests {
 
         let redis_client = RedisClient::new(url.as_ref(), "test_channel".to_string());
         let client = Arc::new(Mutex::new(redis_client));
-        let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));
-        let mut listener = Listener::new(client.clone(), dep);
+        let mut listener = Listener::new(client.clone());
 
         listener.register_handler(WrongTestMessageHandler {
             logger: logger.clone(),

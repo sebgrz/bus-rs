@@ -4,14 +4,13 @@ mod tests {
 
     use std::sync::{Arc, Mutex};
 
-    use crate::{Dependencies, TestLogger, TestMessageHandler, WrongTestMessageHandler};
+    use crate::{TestLogger, TestMessageHandler, WrongTestMessageHandler};
 
     #[test]
     fn should_register_properly_message_handler() {
         // given
         let client = Arc::new(Mutex::new(MockClient::new()));
-        let dep = Box::new(Dependencies {});
-        let mut listener = Listener::new(client, dep);
+        let mut listener = Listener::new(client);
 
         // when
         listener.register_handler(TestMessageHandler {
@@ -26,9 +25,8 @@ mod tests {
     fn should_message_invoke_msg_handler_correctly() {
         // given
         let client = Arc::new(Mutex::new(MockClient::new()));
-        let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));
-        let mut listener = Listener::new(client.clone(), dep);
+        let mut listener = Listener::new(client.clone());
 
         listener.register_handler(WrongTestMessageHandler {
             logger: logger.clone(),

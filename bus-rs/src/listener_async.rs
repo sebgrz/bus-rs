@@ -4,8 +4,8 @@ use futures::future::BoxFuture;
 use tokio::sync::Mutex;
 
 use crate::{
-    message_handler_async::MessageHandlerAsync, message_store::MessageStore, Client, ClientAsync,
-    ClientCallbackFnAsync, ClientError, Dep, MessageConstraints, RawMessage,
+    message_handler_async::MessageHandlerAsync, message_store::MessageStore, ClientAsync,
+    ClientCallbackFnAsync, ClientError, MessageConstraints, RawMessage,
 };
 
 type MessageHandlerCallbackFnAsync =
@@ -14,19 +14,14 @@ type MessageHandlerCallbackFnAsync =
 pub struct ListenerAsync {
     message_store: Arc<Mutex<MessageStore>>,
     client: Arc<Mutex<dyn ClientAsync + Send + Sync + 'static>>,
-    dep: Box<dyn Dep + Send + Sync>,
     handlers: Arc<Mutex<HashMap<String, Arc<MessageHandlerCallbackFnAsync>>>>,
 }
 
 impl ListenerAsync {
-    pub fn new(
-        client: Arc<Mutex<dyn ClientAsync + Send + Sync>>,
-        dep: Box<dyn Dep + Send + Sync>,
-    ) -> Self {
+    pub fn new(client: Arc<Mutex<dyn ClientAsync + Send + Sync>>) -> Self {
         ListenerAsync {
             message_store: Arc::new(Mutex::new(MessageStore::new())),
             client,
-            dep,
             handlers: Arc::new(Mutex::new(HashMap::new())),
         }
     }

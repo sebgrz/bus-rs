@@ -8,14 +8,13 @@ mod tests {
 
     use std::sync::Arc;
 
-    use crate::{Dependencies, TestLogger, TestMessageHandlerAsync, WrongTestMessageHandlerAsync};
+    use crate::{TestLogger, TestMessageHandlerAsync, WrongTestMessageHandlerAsync};
 
     #[tokio::test]
     async fn should_register_properly_message_handler_async() {
         // given
         let client = Arc::new(Mutex::new(MockClient::new()));
-        let dep = Box::new(Dependencies {});
-        let mut listener = ListenerAsync::new(client, dep);
+        let mut listener = ListenerAsync::new(client);
 
         // when
         listener
@@ -32,9 +31,8 @@ mod tests {
     async fn should_message_invoke_msg_handler_async_correctly() {
         // given
         let client = Arc::new(Mutex::new(MockClient::new()));
-        let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));
-        let mut listener = ListenerAsync::new(client.clone(), dep);
+        let mut listener = ListenerAsync::new(client.clone());
 
         listener
             .register_handler(WrongTestMessageHandlerAsync {

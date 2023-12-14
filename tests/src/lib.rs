@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use bus_rs::{message_handler::MessageHandler, message_handler_async::MessageHandlerAsync, Dep};
+use bus_rs::{message_handler::MessageHandler, message_handler_async::MessageHandlerAsync};
 use bus_rs_macros::message;
 use serde::{Deserialize, Serialize};
 
@@ -32,10 +32,6 @@ impl TestLogger {
         self.messages.clear();
     }
 }
-
-struct Dependencies;
-
-impl Dep for Dependencies {}
 
 // message handlers
 #[message]

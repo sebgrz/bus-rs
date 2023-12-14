@@ -49,13 +49,9 @@ impl MessageHandlerAsync<TestMessage> for TestMessageHandlerAsync {
 # Listener
 To create a Listener instance, first a pubsub client is required. For redis implemention from `bus_rs_redis` crate take a look for:
 ```rust
-struct Dependencies;
-impl Dep for Dependencies {}
-
 let redis_client = RedisClient::new("redis://127.0.0.1:6379", "test_channel");
 let client = Arc::new(Mutex::new(redis_client));
-let dep = Box::new(Dependencies {}); // TODO
-let mut listener = Listener::new(client.clone(), dep);
+let mut listener = Listener::new(client.clone());
 ```
 
 **Next thing, which is important, is to register message handlers to the listener:**
@@ -75,13 +71,9 @@ listener.listen().unwrap_or_else(|e| {
 
 ## Example for async listener
 ```rust
-struct Dependencies;
-impl Dep for Dependencies {}
-
 let redis_client = RedisClientAsync::new_receiver("redis://127.0.0.1:6379", "test_channel").await;
 let client = Arc::new(Mutex::new(redis_client));
-let dep = Box::new(Dependencies {});
-let mut listener = ListenerAsync::new(client.clone(), dep);
+let mut listener = ListenerAsync::new(client.clone());
 
 listener.register_handler(TestMessageHandlerAsync {}).await;
 

@@ -9,10 +9,7 @@ mod tests {
     use testcontainers::{core::WaitFor, *};
     use tokio::sync::Mutex;
 
-    use crate::{
-        Dependencies, TestLogger, TestMessage, TestMessageHandlerAsync,
-        WrongTestMessageHandlerAsync,
-    };
+    use crate::{TestLogger, TestMessage, TestMessageHandlerAsync, WrongTestMessageHandlerAsync};
 
     #[tokio::test]
     async fn should_redis_client_async_receive_message_correctly() {
@@ -24,9 +21,8 @@ mod tests {
 
         let redis_client = RedisClientAsync::new_receiver(url.as_ref(), "test_channel".to_string()).await;
         let client = Arc::new(Mutex::new(redis_client));
-        let dep = Box::new(Dependencies {});
         let logger = Arc::new(Mutex::new(TestLogger::new()));
-        let mut listener = ListenerAsync::new(client.clone(), dep);
+        let mut listener = ListenerAsync::new(client.clone());
 
         listener
             .register_handler(WrongTestMessageHandlerAsync {

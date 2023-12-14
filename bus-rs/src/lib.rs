@@ -11,8 +11,6 @@ pub mod message_store;
 pub mod publisher;
 pub mod publisher_async;
 
-pub trait Dep {}
-
 pub trait Client {
     fn receiver(&mut self, recv_callback: &dyn Fn(RawMessage)) -> Result<(), ClientError>;
     fn send(&mut self, msg: &RawMessage) -> Result<(), ClientError>;
