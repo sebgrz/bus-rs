@@ -36,7 +36,8 @@ impl bus_rs::Client for RedisClient {
 
     fn send(&mut self, msg: &bus_rs::RawMessage) -> Result<(), ClientError> {
         let str_msg: String = msg.into();
-        let result: Result<(), redis::RedisError> = self.connection.publish(self.channel.as_str(), str_msg);
+        let result: Result<(), redis::RedisError> =
+            self.connection.publish(self.channel.as_str(), str_msg);
 
         let _ = result.or_else(|e| {
             if e.is_io_error() {

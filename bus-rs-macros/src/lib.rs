@@ -26,6 +26,7 @@ pub fn message(
 
                 bus_rs::RawMessage {
                     msg_type: #type_name_str.to_string(),
+                    headers: std::collections::HashMap::new(),
                     payload: payload
                 }
             }

@@ -5,42 +5,62 @@ use tokio::sync::Mutex;
 
 use crate::{
     message_handler_async::MessageHandlerAsync, message_store::MessageStore, ClientAsync,
-    ClientCallbackFnAsync, ClientError, MessageConstraints, RawMessage,
+    ClientCallbackFnAsync, ClientError, MessageConstraints, PubSubLayer, RawMessage,
 };
 
 type MessageHandlerCallbackFnAsync =
-    dyn Fn(Arc<Mutex<MessageStore>>, RawMessage) -> BoxFuture<'static, ()> + Send + Sync;
+    dyn Fn(&MessageStore, RawMessage) -> BoxFuture<'static, ()> + Send + Sync;
+
+pub(super) struct ContextContainer {
+    message_store: Box<MessageStore>,
+    handlers: Box<HashMap<String, Arc<MessageHandlerCallbackFnAsync>>>,
+    layers: Box<Vec<Box<dyn PubSubLayer>>>,
+}
 
 pub struct ListenerAsync {
-    message_store: Arc<Mutex<MessageStore>>,
-    client: Arc<Mutex<dyn ClientAsync + Send + Sync + 'static>>,
-    handlers: Arc<Mutex<HashMap<String, Arc<MessageHandlerCallbackFnAsync>>>>,
+    context: Arc<Mutex<ContextContainer>>,
+    client: Box<dyn ClientAsync + Send + Sync + 'static>,
 }
 
 impl ListenerAsync {
-    pub fn new(client: Arc<Mutex<dyn ClientAsync + Send + Sync>>) -> Self {
+    pub fn new(
+        client: Box<dyn ClientAsync + Send + Sync>,
+        layers: Vec<Box<dyn PubSubLayer>>,
+    ) -> Self {
+        let context_container = ContextContainer {
+            message_store: Box::new(MessageStore::new()),
+            handlers: Box::new(HashMap::new()),
+            layers: Box::new(layers),
+        };
         ListenerAsync {
-            message_store: Arc::new(Mutex::new(MessageStore::new())),
+            context: Arc::new(Mutex::new(context_container)),
             client,
-            handlers: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     pub async fn listen(&mut self) -> Result<(), ClientError> {
-        let handlers = self.handlers.clone();
-        let message_store = self.message_store.clone();
+        let context = self.context.clone();
         let callback: Arc<ClientCallbackFnAsync> = Arc::new(move |msg: RawMessage| {
-            let handlers = handlers.clone();
-            let message_store = message_store.clone();
+            let mut msg = msg.clone();
+            let context = context.clone();
             Box::pin(async move {
-                if let Some(handler) = handlers.lock().await.get(msg.msg_type.as_str()) {
-                    handler(message_store, msg).await;
+                let context = context.lock().await;
+                context.layers.iter().for_each(|l| {
+                    l.before(&mut msg);
+                });
+
+                if let Some(handler) = context.handlers.get(msg.msg_type.as_str()) {
+                    handler(&context.message_store, msg.clone()).await;
                 }
+
+                context.layers.iter().rev().for_each(|l| {
+                    l.after(&msg);
+                });
                 Ok(())
             })
         });
 
-        self.client.lock().await.receiver(callback).await
+        self.client.receiver(callback).await
     }
 
     pub async fn register_handler<TMessage>(
@@ -51,25 +71,28 @@ impl ListenerAsync {
     {
         let handler_ref = Arc::new(Mutex::new(handler));
         let handler_fn: Box<MessageHandlerCallbackFnAsync> =
-            Box::new(move |ms: Arc<Mutex<MessageStore>>, data: RawMessage| {
+            Box::new(move |ms: &MessageStore, data: RawMessage| {
+                let headers = match data.headers.is_empty() {
+                    true => None,
+                    false => Some(data.headers.clone()),
+                };
+                let msg = ms.resolve::<TMessage>(&data);
                 let handler_ref = handler_ref.clone();
                 Box::pin(async move {
                     let handler_ref = handler_ref.clone();
-                    let msg = ms.lock().await.resolve::<TMessage>(data);
-                    handler_ref.lock().await.handle(msg).await;
+                    handler_ref.lock().await.handle(msg, headers).await;
                 })
             });
 
-        self.message_store
-            .lock()
-            .await
-            .register::<TMessage>(TMessage::name());
-
         self.register_handler_callback::<TMessage>(handler_fn).await;
+
+        let mut context = self.context.lock().await;
+        context.message_store.register::<TMessage>(TMessage::name());
     }
 
     pub async fn registered_handlers_count(&self) -> usize {
-        self.handlers.lock().await.len()
+        let context = self.context.lock().await;
+        context.handlers.len()
     }
 
     async fn register_handler_callback<TMessage>(
@@ -81,9 +104,9 @@ impl ListenerAsync {
         let callback: Arc<MessageHandlerCallbackFnAsync> =
             Arc::new(move |ms, msg| callback(ms, msg));
 
-        self.handlers
-            .lock()
-            .await
+        let mut context = self.context.lock().await;
+        context
+            .handlers
             .insert(TMessage::name().to_string(), callback);
     }
 }

@@ -1,16 +1,23 @@
 #[cfg(test)]
 mod tests {
-    use bus_rs::{listener::Listener, Client, RawMessage};
+    use bus_rs::{
+        builder::{self, Builder},
+        listener::Listener,
+        Client, RawMessage,
+    };
 
-    use std::sync::{Arc, Mutex};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, Mutex},
+    };
 
     use crate::{TestLogger, TestMessageHandler, WrongTestMessageHandler};
 
     #[test]
     fn should_register_properly_message_handler() {
         // given
-        let client = Arc::new(Mutex::new(MockClient::new()));
-        let mut listener = Listener::new(client);
+        let client = Box::new(MockClient::new());
+        let mut listener: Listener = builder::pubsub(client).build();
 
         // when
         listener.register_handler(TestMessageHandler {
@@ -23,26 +30,26 @@ mod tests {
 
     #[test]
     fn should_message_invoke_msg_handler_correctly() {
-        // given
-        let client = Arc::new(Mutex::new(MockClient::new()));
-        let logger = Arc::new(Mutex::new(TestLogger::new()));
-        let mut listener = Listener::new(client.clone());
+        // given client
+        let mut client = Box::new(MockClient::new());
+        client
+            .send(&RawMessage {
+                msg_type: "TestMessage".to_string(),
+                headers: HashMap::from([("trace-id".to_string(), "123".to_string())]),
+                payload: r#"{ "data": "test_data" }"#.to_string(),
+            })
+            .unwrap();
 
+        // and listener with logger
+        let mut listener: Listener = builder::pubsub(client).build();
+
+        let logger = Arc::new(Mutex::new(TestLogger::new()));
         listener.register_handler(WrongTestMessageHandler {
             logger: logger.clone(),
         });
         listener.register_handler(TestMessageHandler {
             logger: logger.clone(),
         });
-
-        client
-            .lock()
-            .unwrap()
-            .send(&RawMessage {
-                msg_type: "TestMessage".to_string(),
-                payload: r#"{ "data": "test_data" }"#.to_string(),
-            })
-            .unwrap();
 
         // when
         let _ = listener.listen();
@@ -51,7 +58,7 @@ mod tests {
         let logger = logger.lock().unwrap();
         assert_eq!(2, listener.registered_handlers_count());
         assert_eq!(1, logger.get().len());
-        assert_eq!("test test_data", logger.get()[0]);
+        assert_eq!("msg: test_data headers: trace-id=123", logger.get()[0]);
     }
 
     // Helpers
