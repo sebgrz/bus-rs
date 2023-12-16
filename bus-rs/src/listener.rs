@@ -1,33 +1,32 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Mutex};
 
 use crate::{
     message_handler::MessageHandler, message_store::MessageStore, Client, ClientError,
-    MessageConstraints, RawMessage,
+    MessageConstraints, PubSubLayer, RawMessage,
 };
 
 pub struct Listener {
-    message_store: Arc<Mutex<MessageStore>>,
-    client: Arc<Mutex<dyn Client + Send + Sync>>,
+    message_store: Box<MessageStore>,
+    client: Box<dyn Client + Send + Sync>,
     handlers: Box<HashMap<String, Box<dyn Fn(&MessageStore, RawMessage) + Send + Sync>>>,
+    layers: Box<Vec<Box<dyn PubSubLayer>>>,
 }
 
 impl Listener {
-    pub fn new(client: Arc<Mutex<dyn Client + Send + Sync>>) -> Self {
+    pub fn new(client: Box<dyn Client + Send + Sync>, layers: Vec<Box<dyn PubSubLayer>>) -> Self {
         Listener {
-            message_store: Arc::new(Mutex::new(MessageStore::new())),
+            message_store: Box::new(MessageStore::new()),
             client,
             handlers: Box::new(HashMap::new()),
+            layers: Box::new(layers),
         }
     }
 
     pub fn listen(&mut self) -> Result<(), ClientError> {
         let callback = |msg: RawMessage| {
-            self.handle(msg);
+            Self::handle(msg, &self.layers, &self.handlers, &self.message_store);
         };
-        self.client.lock().unwrap().receiver(&callback)
+        self.client.receiver(&callback)
     }
 
     pub fn register_handler<TMessage>(
@@ -38,14 +37,15 @@ impl Listener {
     {
         let handler_ref = Mutex::new(handler);
         let handler_fn = move |ms: &MessageStore, data: RawMessage| {
-            let msg = ms.resolve::<TMessage>(data);
-            handler_ref.lock().unwrap().handle(msg);
+            let headers = match data.headers.is_empty() {
+                true => None,
+                false => Some(data.headers.clone()),
+            };
+            let msg = ms.resolve::<TMessage>(&data);
+            handler_ref.lock().unwrap().handle(msg, headers);
         };
 
-        self.message_store
-            .lock()
-            .unwrap()
-            .register::<TMessage>(TMessage::name());
+        self.message_store.register::<TMessage>(TMessage::name());
         self.register_handler_callback::<TMessage, _>(handler_fn);
     }
 
@@ -53,10 +53,23 @@ impl Listener {
         self.handlers.len()
     }
 
-    fn handle(&self, msg: RawMessage) {
-        if let Some(handler) = self.handlers.get(msg.msg_type.as_str()) {
-            handler(&self.message_store.lock().unwrap(), msg);
+    fn handle(
+        mut msg: RawMessage,
+        layers: &Box<Vec<Box<dyn PubSubLayer>>>,
+        handlers: &Box<HashMap<String, Box<dyn Fn(&MessageStore, RawMessage) + Send + Sync>>>,
+        message_store: &Box<MessageStore>,
+    ) {
+        layers.iter().for_each(|l| {
+            l.before(&mut msg);
+        });
+
+        if let Some(handler) = handlers.get(msg.msg_type.as_str()) {
+            handler(&message_store, msg.clone());
         }
+
+        layers.iter().rev().for_each(|l| {
+            l.after(&msg);
+        });
     }
 
     fn register_handler_callback<TMessage, TCallback>(&mut self, callback: TCallback)

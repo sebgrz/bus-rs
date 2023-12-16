@@ -1,6 +1,6 @@
 [package]
 name = "tests"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -9,6 +9,7 @@ edition = "2021"
 bus-rs = { path = "../bus-rs" }
 bus-rs-macros = { path = "../bus-rs-macros" }
 bus-rs-redis = { path = "../bus-rs-redis" }
+itertools = { version = "0.12.0" }
 serde_json.workspace = true
 serde = { workspace = true, features = [ "derive" ] } 
 redis.workspace = true

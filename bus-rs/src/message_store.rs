@@ -34,13 +34,13 @@ impl MessageStore {
             .insert(key.to_string(), callback);
     }
 
-    pub fn resolve<TMessage>(&self, raw_message: RawMessage) -> TMessage
+    pub fn resolve<TMessage>(&self, raw_message: &RawMessage) -> TMessage
     where
         TMessage: DeserializeOwned + Sync + Send + 'static,
     {
         let msg_fn = self.messages.lock().unwrap();
         let msg_fn = msg_fn.get(&raw_message.msg_type).unwrap();
-        let msg = msg_fn(raw_message.payload);
+        let msg = msg_fn(raw_message.payload.to_string());
         let msg: Box<TMessage> = msg.downcast::<TMessage>().unwrap();
         return *msg;
     }

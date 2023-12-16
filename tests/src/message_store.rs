@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use bus_rs::message_store::MessageStore;
     use bus_rs::RawMessage;
 
@@ -23,20 +25,23 @@ mod tests {
 
         let raw_msg_create_user_a = RawMessage {
             msg_type: "create_user".to_string(),
+            headers: HashMap::new(),
             payload: r#"{ "name": "seba" }"#.to_string(),
         };
         let raw_msg_create_user_b = RawMessage {
             msg_type: "create_user".to_string(),
+            headers: HashMap::new(),
             payload: r#"{ "name": "john" }"#.to_string(),
         };
         let raw_msg_remove_user = RawMessage {
             msg_type: "remove_user".to_string(),
+            headers: HashMap::new(),
             payload: r#"{ "id": 123 }"#.to_string(),
         };
         // when
-        let create_user_a = store.resolve::<CreateUserMessage>(raw_msg_create_user_a);
-        let remove_user = store.resolve::<RemoveUserMessage>(raw_msg_remove_user);
-        let create_user_b = store.resolve::<CreateUserMessage>(raw_msg_create_user_b);
+        let create_user_a = store.resolve::<CreateUserMessage>(&raw_msg_create_user_a);
+        let remove_user = store.resolve::<RemoveUserMessage>(&raw_msg_remove_user);
+        let create_user_b = store.resolve::<CreateUserMessage>(&raw_msg_create_user_b);
 
         // then
         assert_eq!(123, remove_user.id);

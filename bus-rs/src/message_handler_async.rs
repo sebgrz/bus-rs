@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 
 use crate::MessageConstraints;
@@ -7,5 +9,5 @@ pub trait MessageHandlerAsync<TMessage>
 where
     TMessage: MessageConstraints,
 {
-    async fn handle(&mut self, msg: TMessage);
+    async fn handle(&mut self, msg: TMessage, headers: Option<HashMap<String, String>>);
 }

@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use futures::future::BoxFuture;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
+pub mod builder;
 pub mod listener;
 pub mod listener_async;
 pub mod message_handler;
@@ -38,6 +39,7 @@ pub enum ClientError {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RawMessage {
     pub msg_type: String,
+    pub headers: HashMap<String, String>,
     pub payload: String,
 }
 
@@ -65,3 +67,18 @@ pub trait MessageTypeName {
 
 pub trait MessageConstraints: DeserializeOwned + Serialize + MessageTypeName + 'static {}
 impl<T: DeserializeOwned + Serialize + MessageTypeName + 'static> MessageConstraints for T {}
+
+pub trait PubSubLayer: Send + Sync {
+    fn before(&self, raw_msg: &mut RawMessage);
+    fn after(&self, raw_msg: &RawMessage);
+}
+
+pub struct PublisherContext {
+    pub(crate) client: Box<dyn Client + Send + Sync>,
+    pub(crate) layers: Vec<Box<dyn PubSubLayer>>,
+}
+
+pub struct PublisherContextAsync {
+    pub(crate) client: Box<dyn ClientAsync + Send + Sync>,
+    pub(crate) layers: Vec<Box<dyn PubSubLayer>>,
+}
